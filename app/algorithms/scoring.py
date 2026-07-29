@@ -12,6 +12,11 @@ def calculate_total_score(
     intersection_penalty = intersections * 1
     traffic_penalty = traffic_score * 1.5
 
+    """
+    フロントエンドでパラメータ調整の実装が完了次第、
+    ユーザーの好みに応じて重みづけする内容を以下に追加する。
+    """
+
     total_score = (
         distance_penalty
         + elevation_penalty
