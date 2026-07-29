@@ -8,7 +8,7 @@ class RoutePoint(BaseModel):
 
 class TurnPoint(BaseModel):
     lat: float
-    lon float
+    lon: float
     direction: Literal["left", "right", "straight"]
     instruction: str
 
@@ -22,7 +22,7 @@ class RouteCandidate(BaseModel):
     traffic_score: float
     total_score: float
     coordinates: List[RoutePoint]
-    turn_point: List[TurnPoint]
+    turn_points: List[TurnPoint]
 
 class RouteResponse(BaseModel):
     routes: List[RouteCandidate]

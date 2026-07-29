@@ -1,8 +1,8 @@
-from fastapi import fastapi
+from fastapi import FastAPI
 from app.api.routes import router
 
 app = FastAPI(
-    title-"Running Support App Backend",
+    title="Running Support App Backend",
     description="ランニングルート提案および音声ナビゲーションAPI",
     version="0.1.0",
 )
