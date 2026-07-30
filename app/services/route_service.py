@@ -105,6 +105,7 @@ def generate_mock_routes(request: RouteRequest) -> list[RouteCandidate]:
             signals=route_data["signals"],
             intersections=route_data["intersections"],
             traffic_score=route_data["traffic_score"],
+            preferences=request.preferences,
         )
 
         route_candidate = RouteCandidate(

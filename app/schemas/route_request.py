@@ -6,8 +6,8 @@ class StartPoint(BaseModel):
     lon: float = Field(..., description="経度")
 
 class RoutePreferences(BaseModel):
-    avoid_traffic_jam: bool = True
-    avoid_traffic_lights: bool = True
+    avoid_traffic: bool = True
+    avoid_signals: bool = True
     avoid_intersections: bool = True
     elevation_mode: str = "low" # low / normal / high
 
