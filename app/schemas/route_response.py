@@ -12,6 +12,10 @@ class TurnPoint(BaseModel):
     direction: Literal["left", "right", "straight"]
     instruction: str
 
+class GeoJsonLineString(BaseModel):
+    type: Literal["LineString"]
+    coordinates: List[List[float]]
+
 class RouteCandidate(BaseModel):
     id: str
     name: str
@@ -22,6 +26,7 @@ class RouteCandidate(BaseModel):
     traffic_score: float
     total_score: float
     coordinates: List[RoutePoint]
+    geometry: GeoJsonLineString
     turn_points: List[TurnPoint]
 
 class RouteResponse(BaseModel):

@@ -9,10 +9,10 @@ def calculate_total_score(
     traffic_score: float,
     preferences: RoutePreferences,
 ) -> float:
-    distance_penalty = abs(target_distance_km - actual_distance_km) * 20
+    distance_penalty = abs(target_distance_km - actual_distance_km) * 5
 
     signal_weight = 3.0 if preferences.avoid_signals else 1.0
-    intersection_weight = 2.0 if preferences.avoid_intersections else 0.8
+    intersection_weight = 3.0 if preferences.avoid_intersections else 0.8
     traffic_weight = 3.0 if preferences.avoid_traffic else 1.0
 
     if preferences.elevation_mode == "low":
