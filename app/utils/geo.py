@@ -65,3 +65,31 @@ def calculate_route_distance_km(coordinates: list[dict]) -> float:
     """
 
     return calculate_route_distance_m(coordinates) / 1000
+
+def convert_to_geojson_linestring(coordinates: list[dict]) -> dict:
+    """
+    lat/lon形式の座標列をGeoJSON LineString形式に変換する。
+
+    入力:
+    [
+        {"lat": 35.8721, "lon": 140.0106}
+    ]
+
+    出力:
+    {
+        "type": "LineString",
+        "coordinates": [
+            [140.0106, 35.8721]
+        ]
+    }
+
+    GeoJSONでは [lon, lat] の順番になる点に注意。
+    """
+
+    return {
+        "type": "LineString",
+        "coordinates": [
+            [point["lon"], point["lat"]]
+            for point in coordinates
+        ],
+    }

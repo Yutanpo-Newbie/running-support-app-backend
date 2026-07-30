@@ -1,7 +1,10 @@
 from app.schemas.route_request import RouteRequest
-from app.schemas.route_response import RouteCandidate, RoutePoint, TurnPoint
-from app.utils.geo import calculate_route_distance_km
+from app.schemas.route_response import (
+    RouteCandidate, RoutePoint, TurnPoint, GeoJsonLineString,
+    )
+from app.utils.geo import calculate_route_distance_km, convert_to_geojson_linestring
 from app.algorithms.scoring import calculate_total_score
+from app.algorithms.waypoint_generator import generate_loop_coordinates
 
 def generate_mock_routes(request: RouteRequest) -> list[RouteCandidate]:
     """
@@ -14,24 +17,25 @@ def generate_mock_routes(request: RouteRequest) -> list[RouteCandidate]:
     start_lat = request.start.lat
     start_lon = request.start.lon
 
+    generated_coordinates = generate_loop_coordinates(
+        start_lat=start_lat,
+        start_lon=start_lon,
+        distance_km=request.distance_km,
+    )
+
     mock_route_data = [
         {
             "id": "route_test001",
             "name": "仮ルート:信号少なめ",
-            "coordinates": [
-                {"lat": start_lat, "lon": start_lon},
-                {"lat": start_lat + 0.001, "lon": start_lon + 0.001},
-                {"lat": start_lat + 0.002, "lon": start_lon},
-                {"lat": start_lat, "lon": start_lon},
-            ],
-            "elevation_gain_m": 25.0,
-            "signals": 5,
-            "intersections": 12,
-            "traffic_score": 8.5,
+            "coordinates": generated_coordinates[0],
+            "elevation_gain_m": 30.0,
+            "signals": 2,
+            "intersections": 10,
+            "traffic_score": 8.0,
             "turn_points": [
                 {
-                    "lat": start_lat + 0.001,
-                    "lon": start_lon + 0.001,
+                    "lat": generated_coordinates[0][1]["lat"],
+                    "lon": generated_coordinates[0][1]["lon"],
                     "direction": "right",
                     "instruction": "次は右折です",
                 }
@@ -39,51 +43,33 @@ def generate_mock_routes(request: RouteRequest) -> list[RouteCandidate]:
         },
         {
             "id": "route_test002",
-            "name": "仮ルート:距離優先",
-            "coordinates": [
-                {"lat": start_lat, "lon": start_lon},
-                {"lat": start_lat + 0.002, "lon": start_lon + 0.001},
-                {"lat": start_lat + 0.003, "lon": start_lon - 0.001},
-                {"lat": start_lat + 0.001, "lon": start_lon - 0.002},
-                {"lat": start_lat, "lon": start_lon},
-            ],
-            "elevation_gain_m": 35.0,
-            "signals": 8,
-            "intersections": 18,
-            "traffic_score": 10.0,
+            "name": "仮ルート:距離優先・車通り多め",
+            "coordinates": generated_coordinates[1],
+            "elevation_gain_m": 40.0,
+            "signals": 10,
+            "intersections": 24,
+            "traffic_score": 18.0,
             "turn_points": [
                 {
-                    "lat": start_lat + 0.002,
-                    "lon": start_lon + 0.001,
+                    "lat": generated_coordinates[1][1]["lat"],
+                    "lon": generated_coordinates[1][1]["lon"],
                     "direction": "left",
                     "instruction": "次は左折です",
-                },
-                {
-                    "lat": start_lat + 0.003,
-                    "lon": start_lon - 0.001,
-                    "direction": "right",
-                    "instruction": "次は右折です",
                 },
             ],
         },
         {
             "id": "route_test003",
-            "name": "仮ルート:坂道少なめ",
-            "coordinates": [
-                {"lat": start_lat, "lon": start_lon},
-                {"lat": start_lat + 0.001, "lon": start_lon - 0.001},
-                {"lat": start_lat + 0.0015, "lon": start_lon - 0.002},
-                {"lat": start_lat, "lon": start_lon - 0.001},
-                {"lat": start_lat, "lon": start_lon},
-            ],
-            "elevation_gain_m": 10.0,
-            "signals": 7,
+            "name": "仮ルート:坂道少なめ・車通り少なめ",
+            "coordinates": generated_coordinates[2],
+            "elevation_gain_m": 5.0,
+            "signals": 6,
             "intersections": 14,
-            "traffic_score": 6.0,
+            "traffic_score": 3.0,
             "turn_points": [
                 {
-                    "lat": start_lat + 0.001,
-                    "lon": start_lon - 0.001,
+                    "lat": generated_coordinates[2][1]["lat"],
+                    "lon": generated_coordinates[2][1]["lon"],
                     "direction": "straight",
                     "instruction": "次は道なりです",
                 }
@@ -97,6 +83,7 @@ def generate_mock_routes(request: RouteRequest) -> list[RouteCandidate]:
         coordinates = route_data["coordinates"]
 
         actual_distance_km = calculate_route_distance_km(coordinates)
+        geojson_geometry = convert_to_geojson_linestring(coordinates)
 
         total_score = calculate_total_score(
             target_distance_km=request.distance_km,
@@ -124,6 +111,10 @@ def generate_mock_routes(request: RouteRequest) -> list[RouteCandidate]:
                 )
                 for point in coordinates
             ],
+            geometry=GeoJsonLineString(
+                type=geojson_geometry["type"],
+                coordinates=geojson_geometry["coordinates"],
+            ),
             turn_points=[
                 TurnPoint(
                     lat=point["lat"],
