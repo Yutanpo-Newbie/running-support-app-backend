@@ -5,6 +5,12 @@ from app.schemas.route_response import (
 from app.utils.geo import calculate_route_distance_km, convert_to_geojson_linestring
 from app.algorithms.scoring import calculate_total_score
 from app.algorithms.waypoint_generator import generate_loop_coordinates
+from app.services.osm_client import (
+    get_road_graph,
+    get_nearest_node,
+    get_candidate_nodes_by_distance,
+    generate_loop_route_candidates,
+)
 
 def generate_mock_routes(request: RouteRequest) -> list[RouteCandidate]:
     """
@@ -131,3 +137,77 @@ def generate_mock_routes(request: RouteRequest) -> list[RouteCandidate]:
     route_candidates.sort(key=lambda route: route.total_score)
 
     return route_candidates
+
+def generate_osmnx_routes(request: RouteRequest) -> list[RouteCandidate]:
+    """
+    OSMnxを使って、実道路ネットワーク上のルート候補を生成する。
+    現段階では start → candidate → start の往復型ルートを返す。
+    """
+
+    start_lat = request.start.lat
+    start_lon = request.start.lon
+
+    # 希望距離に応じて道路グラフの取得範囲を決める
+    # 例: 2kmなら周辺1000m、5kmなら周辺2500m程度
+    graph_dist_m = int(max(request.distance_km * 1000 / 2 + 500, 1000))
+
+    graph = get_road_graph(
+        lat=start_lat,
+        lon=start_lon,
+        dist_m=graph_dist_m,
+    )
+
+    start_node = get_nearest_node(
+        graph=graph,
+        lat=start_lat,
+        lon=start_lon,
+    )
+
+    target_oneway_distance_m = request.distance_km * 1000 / 2
+
+    candidate_nodes = get_candidate_nodes_by_distance(
+        graph=graph,
+        start_node=start_node,
+        target_distance_m=target_oneway_distance_m,
+        tolerance_m=300,
+        max_candidates=10,
+    )
+
+    osm_route_candidates = generate_loop_route_candidates(
+        graph=graph,
+        start_node=start_node,
+        candidate_nodes=candidate_nodes,
+        target_distance_km=request.distance_km,
+        preferences=request.preferences,
+        max_routes=3,
+    )
+
+    routes: list[RouteCandidate] = []
+
+    for index, route in enumerate(osm_route_candidates, start=1):
+        route_candidate = RouteCandidate(
+            id=f"osm_route_{index:03d}",
+            name=f"OSM実道路ルート候補{index}",
+            distance_km=route["distance_km"],
+            elevation_gain_m=route["elevation_gain_m"],
+            signals=route["signals"],
+            intersections=route["intersections"],
+            traffic_score=route["traffic_score"],
+            total_score=route["total_score"],
+            coordinates=[
+                RoutePoint(
+                    lat=point["lat"],
+                    lon=point["lon"],
+                )
+                for point in route["coordinates"]
+            ],
+            geometry=GeoJsonLineString(
+                type=route["geometry"]["type"],
+                coordinates=route["geometry"]["coordinates"],
+            ),
+            turn_points=[],
+        )
+
+        routes.append(route_candidate)
+
+    return routes
