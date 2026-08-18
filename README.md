@@ -33,9 +33,6 @@ ROUTE_ENGINE=mock
 
 ---
 
-## 2. 現段階の到達点も追記
-
-READMEにこれも追加しておくと、教授に見せやすいです。
 
 ```md
 ## 現段階の到達点
@@ -86,4 +83,6 @@ running-support-app-backend/
 ├── scripts/
 │   └── sample_request.py
 ├── requirements.txt
-└── README.md
+├── README.md
+├── .env
+└── .env.example
